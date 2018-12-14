@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+          http://www.springframework.org/schema/beans 
+          http://www.springframework.org/schema/beans/spring-beans-4.1.xsd"
+          default-lazy-init="false">
+
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:resources.properties</value>
+				<value>classpath:jwt.properties</value>
+			</list>
+		</property>
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+	</bean>
+
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="driverClassName" value="${jdbc.driverClass}" />
+		<property name="maxActive" value="${jdbc.maxPoolSize}" /> 
+		<property name="maxIdle" value="${jdbc.minPoolSize}" /> 
+	</bean>
+	
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!--自动匹配Mapper映射文件 -->
+		<property name="mapperLocations" value="classpath:mappings/*" />
+ 		<!--mybatis 实体BEAN所在路径 和查询的表一一对应 -->
+		<property name="typeAliasesPackage" value="com.**.entity" />
+	</bean>
+	
+	<!--通过扫描的模式，扫描目录在com.*.mapper目录下，所有的mapper都继承SqlMapper接口的接口 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+	<!--mybatis dao接口所在包 -->
+		<property name="basePackage" value="com.**.mapper" />
+	</bean>
+
+<!-- redis连接池配置 -->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <!-- 最大连接数 -->
+        <property name="maxTotal" value="30" />
+        <!-- 最大空闲连接数 -->
+        <property name="maxIdle" value="10" />
+        <!-- 每次释放连接的最大数目 -->
+        <property name="numTestsPerEvictionRun" value="1024" />
+        <!-- 释放连接的扫描间隔（毫秒） -->
+        <property name="timeBetweenEvictionRunsMillis" value="30000" />
+        <!-- 连接最小空闲时间 -->
+        <property name="minEvictableIdleTimeMillis" value="1800000" />
+        <!-- 连接空闲多久后释放, 当空闲时间>该值 且 空闲连接>最大空闲连接数 时直接释放 -->
+        <property name="softMinEvictableIdleTimeMillis" value="10000" />
+        <!-- 获取连接时的最大等待毫秒数,小于零:阻塞不确定的时间,默认-1 -->
+        <property name="maxWaitMillis" value="1500" />
+        <!-- 在获取连接的时候检查有效性, 默认false -->
+        <property name="testOnBorrow" value="true" />
+        <!-- 在空闲时检查有效性, 默认false -->
+        <property name="testWhileIdle" value="true" />
+        <!-- 连接耗尽时是否阻塞, false报异常,ture阻塞直到超时, 默认true -->
+        <property name="blockWhenExhausted" value="false" />
+    </bean>
+    
+    <bean id="jedisPool" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <property name="hostName" value="10.10.20.30"/>
+        <property name="port" value="6379"/>
+        <property name="password" value="" />
+        <property name="usePool" value="true"/>     
+        <constructor-arg name="poolConfig" ref="jedisPoolConfig"/>
+    </bean>
+    
+     <bean id="stringRedisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+        <property name="connectionFactory" ref="jedisPool"></property>
+        <property name="keySerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"></bean>
+        </property>
+        <property name="valueSerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"></bean>
+        </property>
+        <property name="hashKeySerializer">
+            <bean class="org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer"/>
+        </property>
+        <property name="hashValueSerializer">
+            <bean class="org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer"/>
+        </property>
+        <property name="stringSerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"/>
+        </property>
+    </bean>
+    
+	<bean id="jwt" class="com.oauth2.entity.Constants">
+	    <!-- TODO -->
+	</bean>
+</beans>
